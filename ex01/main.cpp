@@ -6,7 +6,7 @@
 /*   By: dyao <dyao@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:21:23 by dyao              #+#    #+#             */
-/*   Updated: 2025/03/21 14:37:13 by dyao             ###   ########.fr       */
+/*   Updated: 2025/04/03 17:29:35 by dyao             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,24 +23,6 @@ bool	check_input(std::string input)
 	}
 	return (true);
 }
-
-//my work need to test if this will work.
-// void	put_in_stack(std::stack<std::string> &store, std::string &input)
-// {
-// 	size_t len = 0;
-// 	std::string temp;
-// 	std::string::iterator hold = input.begin();
-// 	for (std::string::iterator it = input.begin(); it != input.end(); it++)
-// 	{
-// 		if (*it == ' ' || it == input.end() - 1)
-// 		{
-// 			len = std::distance(hold, it);
-// 			temp = input.substr(std::distance(input.begin(), hold), len);
-// 			store.push(temp);
-// 			hold = it + 1;
-// 		}
-// 	}
-// }
 
 bool	check_str(std::string input)
 {
@@ -62,143 +44,75 @@ bool	check_str(std::string input)
 	return (false);
 }
 
-bool	put_in_stack(std::queue<std::string> &store, const std::string &input)
+bool	calculate_stack(std::string::iterator &it, std::stack<int> &store)
 {
-	size_t start = 0;
-	size_t end;
-	int	count_nbr = 0;
-	int	count_symble = 0;
-
-	while ((end = input.find(' ', start)) != std::string::npos)
+	int	a = 0;
+	int	b = 0;
+	if (store.size() > 1)
 	{
-		if (end > start)
-		{
-			if (!check_str(input.substr(start, end - start)))
-				return (false);
-			if (input.substr(start, end - start) == "+" || input.substr(start, end - start) == "-"
-				|| input.substr(start, end - start) == "*" || input.substr(start, end - start) == "/")
-				count_symble++;
-			else
-				count_nbr++;
-			store.push(input.substr(start, end - start));
-		}
-		start = end + 1;
+		b = store.top();
+		store.pop();
+		a = store.top();
+		store.pop();
 	}
-	if (start < input.size())
-	{
-		if (!check_str(input.substr(start)))
-				return (false);
-		if (input.substr(start, end - start) == "+" || input.substr(start, end - start) == "-"
-			|| input.substr(start, end - start) == "*" || input.substr(start, end - start) == "/")
-			count_symble++;
-		else
-			count_nbr++;
-		store.push(input.substr(start));
-	}
-	if (count_nbr - 1 == count_symble)
-		return (true);
 	else
 		return (false);
+	if (*it == '+')
+		store.push(a + b);
+	if (*it == '-')
+		store.push(a - b);
+	if (*it == '*')
+		store.push(a * b);
+	if (*it == '/')
+	{
+		if (b == 0)
+			return (false);
+		store.push(a / b);
+	}
+	std::cout << "this is the top element after calculation: " << store.top() << std::endl;
 	return (true);
 }
 
-bool	calculate(std::queue<int> &temp_nbr, std::queue<std::string> &store)
+bool	calculate_result(std::stack<int> &store, std::string input)
 {
-	std::queue<int> hold;
-	int temp[2];
-	temp[0] = temp_nbr.front();
-	temp_nbr.pop();
-	temp[1] = temp_nbr.front();
-	temp_nbr.pop();
-	if (store.front() == "+")
+	int	length = 0;
+	int	length_1 = 0;
+
+	std::string::iterator it = input.begin();
+	std::string::iterator it2 = input.begin();
+	while (it != input.end())
 	{
-		hold.push(temp[0] + temp[1]);
-		while (!temp_nbr.empty())
+		if (*it == ' ')
 		{
-			hold.push(temp_nbr.front());
-			temp_nbr.pop();
+			it++;
+			continue;
 		}
-	}
-	if (store.front() == "-")
-	{
-		hold.push(temp[0] - temp[1]);
-		while (!temp_nbr.empty())
+		it2 = it;
+		while (it2 != input.end() && *it2 != ' ')
+			it2++;
+		length = std::distance(input.begin(), it);
+		length_1 = std::distance(it, it2);
+		if (!check_str(input.substr(length, length_1)))
+			return (false);
+		if ((*it == '+' || *it == '*' || *it == '/' || *it == '-') && length_1 == 1)
 		{
-			hold.push(temp_nbr.front());
-			temp_nbr.pop();
-		}
-	}
-	if (store.front() == "*")
-	{
-		hold.push(temp[0] * temp[1]);
-		while (!temp_nbr.empty())
-		{
-			hold.push(temp_nbr.front());
-			temp_nbr.pop();
-		}
-	}
-	if (store.front() == "/")
-	{
-		if (temp[1] != 0)
-		{
-			hold.push(temp[0] / temp[1]);
-			while (!temp_nbr.empty())
-			{
-				hold.push(temp_nbr.front());
-				temp_nbr.pop();
-			}
+			if (!calculate_stack(it, store))
+				return (false);
 		}
 		else
-			return (false);
+			store.push(atoi(input.substr(length, length_1).c_str()));
+		it = it2;
 	}
-	temp_nbr = hold;
-	store.pop();
-	return (true);
-}
-
-bool	print_result(std::queue<std::string> &store)
-{
-	std::queue<int> temp_nbr;
-	std::string symble;
-	// if (store.size() == 1)
-	// {
-	// 	std::cout << store.front() << std::endl;
-	// 	return (true);
-	// }
-	while (!store.empty())
-	{
-		while (!store.empty() && store.front() != "+" && store.front() != "-" && store.front() != "/" && store.front() != "*")
-		{
-			if (atoi(store.front().c_str()) >= 10)
-				return (false);
-			temp_nbr.push(atoi(store.front().c_str()));
-			store.pop();
-		}
-		if (!store.empty() && temp_nbr.size() == 1)
-		{
-			symble = store.front();
-			store.pop();
-			if (store.front() == "+" || store.front() == "-" || store.front() == "*" || store.front() == "/")
-				return (false);
-			temp_nbr.push(atoi(store.front().c_str()));
-			store.pop();
-			store.push(symble);
-		}
-		if (!store.empty() && !calculate(temp_nbr, store))
-			return (false);
-	}
-	if (temp_nbr.size() != 1)
-		return (false);
+	if (store.size() == 1)
+		std::cout << "The result is " << store.top() << std::endl;
 	else
-	{
-		std::cout << temp_nbr.front() << std::endl;
-		return (true);
-	}
+		return (false);
+	return (true);
 }
 
 int	main(int argc, char **argv)
 {
-	std::queue<std::string> store;
+	std::stack<int> store;
 	std::string input;
 	if (argc != 2)
 	{
@@ -211,12 +125,7 @@ int	main(int argc, char **argv)
 		std::cerr << "Error: invalid input" << std::endl;
 		return (1);
 	}
-	if (!put_in_stack(store, input))
-	{
-		std::cerr << "Error: invalid input" << std::endl;
-		return (1);
-	}
-	if (!print_result(store))
+	if (!calculate_result(store, input))
 	{
 		std::cerr << "Error: invalid input" << std::endl;
 		return (1);
